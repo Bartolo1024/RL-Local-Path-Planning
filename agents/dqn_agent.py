@@ -13,15 +13,18 @@ class DQNAgent(memory_agent.MemoryAgent):
                  init_state,
                  lr=0.00025,
                  num_of_actions=3,
+                 pretrained=None,
                  **kwargs):
         super(DQNAgent, self).__init__(network_architecture, init_state, **kwargs)
         self.qnet = nets.get_value_estimator(network_architecture,
-                                             init_state['ranges'].shape,
-                                             num_actions=num_of_actions).to(self.device)
+                                             init_state,
+                                             num_actions=num_of_actions,
+                                             pretrained=pretrained).to(self.device)
         self.qnet = torch.nn.DataParallel(self.qnet, device_ids=range(torch.cuda.device_count()))
         self.target_net = nets.get_value_estimator(network_architecture,
-                                                   init_state['ranges'].shape,
-                                                   num_actions=num_of_actions).to(self.device)
+                                                   init_state,
+                                                   num_actions=num_of_actions,
+                                                   pretrained=pretrained).to(self.device)
         self.target_net = torch.nn.DataParallel(self.target_net, device_ids=range(torch.cuda.device_count()))
         self.target_net.load_state_dict(self.qnet.state_dict())
         self.target_net.eval()
@@ -35,7 +38,7 @@ class DQNAgent(memory_agent.MemoryAgent):
         state = self.state_transform([state], self.device)
         sample = random.random()
         eps_th = self.epsilon()
-        if sample > eps_th:
+        if sample > eps_th or self.eval_mode:
             with torch.no_grad():
                 val, idx = self.qnet(*state)[0].max(0)
                 return idx.item()
@@ -47,7 +50,6 @@ class DQNAgent(memory_agent.MemoryAgent):
             print('not update')
             return
         state_batch, action_batch, reward_batch, batch = tmp
-        # print(reward_batch)
         self.qnet.train()
         q = self.qnet(*state_batch)
 
@@ -56,14 +58,14 @@ class DQNAgent(memory_agent.MemoryAgent):
         with torch.no_grad():
             expected_state_action_values = self.future_reward_estimate(batch) + reward_batch
 
-        # print(expected_state_action_values)
         loss = functional.l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
         self.logger.log_value('loss', loss.item())
         print('loss: {}'.format(loss.item()))
         self.optimizer.zero_grad()
         loss.backward()
         for param in self.qnet.parameters():
-            param.grad.data.clamp(-1, 1)
+            if param.requires_grad:
+                param.grad.data.clamp(-1, 1)
         self.optimizer.step()
 
     def future_reward_estimate(self, batch):

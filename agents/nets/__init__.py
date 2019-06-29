@@ -1,47 +1,54 @@
-from agents.nets.value_estimators.conv1d_value_estimator import Conv1dValueEstimator
-from agents.nets.value_estimators.conv2d_value_estimator import Conv2dValueEstimator
-from agents.nets.value_estimators.lstm_value_estimator import LSTMValueEstimator
-from agents.nets.value_estimators.mlp_value_estimator import MLPValueEstimator
-# import agents.nets.policy.conv1d_policy as conv1d_policy
-# import agents.nets.adventage_estimators.conv1d_adventage_estimator as conv1d_adventage_estimator
+from agents.nets.q_networks.conv1d_value_estimator import Conv1dValueEstimator
+from agents.nets.q_networks.conv2d_value_estimator import Conv2dValueEstimator
+from agents.nets.q_networks.lstm_value_estimator import LSTMValueEstimator
+from agents.nets.q_networks.mlp_value_estimator import MLPValueEstimator
+from agents.nets.q_networks.gru import GRUValueEstimator
+from agents.nets.ac_models.mlp_model import MLPActorCritic
+from agents.nets.ac_models.mlp_cartpole_model import MLPCartpoleActorCritic
 
 from .utils import SequenceCollector
 import transforms
 
 def get_value_estimator(name,
-                        state_shape,
+                        init_state,
+                        pretrained=None,
+                        freeze=True,
                         body_fets=(1, 4, 8, 16, 16),
-                        num_actions=4):
+                        num_actions=3):
     body_fets = ((f1, f2) for (f1, f2) in zip(body_fets, body_fets[1:]))
     if name == 'conv1d':
-        return Conv1dValueEstimator(state_shape, body_fets, num_actions)
+        return Conv1dValueEstimator(init_state['ranges'].shape, body_fets, num_actions)
     elif name == 'conv2d':
-        return Conv2dValueEstimator(state_shape, body_fets, num_actions)
+        return Conv2dValueEstimator(init_state['ranges'].shape, body_fets, num_actions)
     elif name == 'lstm':
-        return LSTMValueEstimator(state_shape, num_actions=num_actions)
+        net = LSTMValueEstimator(init_state['ranges'].shape, num_actions=num_actions)
+        if pretrained:
+            net.load_pretrained_weights(pretrained, freeze)
+        return net
     elif name == 'mlp':
-        return MLPValueEstimator(state_shape, body_fets, num_actions)
+        return MLPValueEstimator(init_state['ranges'].shape, num_actions=num_actions)
+    elif name == 'gru':
+        return GRUValueEstimator(init_state['ranges'].shape, num_actions=num_actions)
     else:
         assert 'BAD VALUE ESTIMATOR NAME'
 
-def get_adventage_estimator(name,
-                            state_shape,
-                            num_actions=4):
-    if name is 'conv1d':
-        return conv1d_adventage_estimator.Conv1dAdventageEstimator(state_shape, num_actions)
-    raise NotImplementedError('BAD VALUE ESTIMATOR NAME')
-
-def get_policy(name,
-               state_shape,
-               num_actions=4):
-    if name is 'conv1d':
-        return conv1d_policy.Conv1dPolicy(state_shape, num_actions)
+def get_actor_critic_net(name,
+                         init_state,
+                         num_actions=3,
+                         env='cartpole'):
+    if name == 'mlp':
+        return MLPActorCritic(ranges_shape=init_state['ranges'].shape,
+                              target_points_shape=init_state['target_point'].shape,
+                              num_actions=num_actions)
+    elif name == 'cartpole_mlp':
+        return MLPCartpoleActorCritic(state_shape=init_state.shape,
+                                      num_actions=num_actions)
     raise NotImplementedError('BAD VALUE ESTIMATOR NAME')
 
 def get_state_transforms(net_architecture, **kwargs):
-    if net_architecture == 'conv1d':
+    if net_architecture in ('conv1d', 'mlp'):
         return transforms.ToTensor()
-    elif net_architecture == 'lstm':
+    elif net_architecture in get_recurrent_architectures_list():
         return transforms.ToRecurrentStatesTensor()
     return NotImplementedError
 

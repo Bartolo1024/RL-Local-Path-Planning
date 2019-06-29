@@ -5,9 +5,11 @@ import environments.path_points_controller as pc
 
 class PathReward(reward.Reward, pc.PathPointsController):
     def __init__(self,
+                 config,
+                 path_planner,
                  bias=1.0,
                  **kwargs):
-        pc.PathPointsController.__init__(self, **kwargs)
+        pc.PathPointsController.__init__(self, config, path_planner, sample_path=False, **kwargs)
         self.prev_coordinates = None
         self.prev_time = None
         self.prev_dist = 0
@@ -17,7 +19,7 @@ class PathReward(reward.Reward, pc.PathPointsController):
         x_robot_position, y_robot_position = self._get_actual_coordinates(coordinates)
         vel = self._get_velocity(coordinates)
         prev_point, next_point = self._get_closest_path_points(x_robot_position, y_robot_position)
-        path_direction_vec = (prev_point[i] - next_point[i] for i in range(len(prev_point)))
+        path_direction_vec = (next_point[i] - prev_point[i] for i in range(2))
 
         path_angle = utils.angle_with_x_axis(path_direction_vec)
         robot_angle = utils.rot_gazebo_transform(coordinates.pose.orientation)

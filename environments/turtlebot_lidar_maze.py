@@ -17,13 +17,15 @@ from reward import get_reward
 import connection.utils as con_ut
 import state_transforms
 import env_config
+import path_planners
 
-class GazeboCircuitTurtlebotLidarEnv(gazebo_env.GazeboEnv):
+
+class GazeboMazeTurtlebotLidarEnv(gazebo_env.GazeboEnv):
 
     def __init__(self,
                  port='11311',
                  port_gazebo='11345',
-                 launch_file='GazeboCircuitTurtlebotLidar_v0.launch',
+                 launch_file='GazeboMazeTurtlebotLidar_v0.launch',
                  reward_str='HitReward,CoinReward',
                  logger=None):
         gazebo_env.GazeboEnv.__init__(self,
@@ -40,10 +42,11 @@ class GazeboCircuitTurtlebotLidarEnv(gazebo_env.GazeboEnv):
         self.model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
         self.model = GetModelStateRequest()
         self.model.model_name = 'mobile_base'
-        config = env_config.get_config('myenv-v0')
-        self.rewards = get_reward(reward_str, config)
+        config = env_config.get_config('env-maze-v0')
+        self.path_planner = path_planners.RandomPathPlanner(config)
+        self.rewards = get_reward(reward_str, config, path_planner=self.path_planner)
         self.min_range = 0.2
-        self.transform_observation = state_transforms.ObservationTransform(config)
+        self.transform_observation = state_transforms.ObservationTransform(config, self.path_planner)
         self.logger = logger
         self._seed()
 

@@ -1,0 +1,7 @@
+.idea/*
+idea/*
+*.pyc
+*pyc
+.idea/misc.xml
+out/
+*ipynb

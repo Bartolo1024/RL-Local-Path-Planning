@@ -4,7 +4,7 @@ import torch.nn as nn
 class Conv1dValueEstimator(nn.Module):
     def __init__(self,
                  state_shape,
-                 body_fets=((1, 4), (4, 8), (8, 16), (16, 16)),
+                 body_fets,
                  num_actions=4):
         super(Conv1dValueEstimator, self).__init__()
         _, w = state_shape
@@ -12,8 +12,7 @@ class Conv1dValueEstimator(nn.Module):
         body = [self._conv_block(in_ch, out_ch)
                 for (in_ch, out_ch) in body_fets]
         self.body = nn.Sequential(*body)
-        head = nn.Sequential(nn.Linear(w * 16, num_actions), nn.ReLU())
-        self.head = nn.Sequential(*head)
+        self.head = nn.Linear(w * 16, num_actions)
 
     @staticmethod
     def _conv_block(in_feats, out_feats):

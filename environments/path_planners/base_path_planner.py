@@ -1,14 +1,12 @@
 import heapq
 import cell
+import abc
 
 class GridGraphPathPlanner(object):
     def __init__(self, grid_height, grid_width):
-        self.opened = []
-        heapq.heapify(self.opened)
-        self.closed = set()
-        self.cells = []
         self.grid_height = grid_height
         self.grid_width = grid_width
+        self.reset()
 
     def init_grid(self, walls):
         for x in range(self.grid_width):
@@ -22,6 +20,10 @@ class GridGraphPathPlanner(object):
     def set_task(self, begin, end):
         self.start = self.get_cell(*begin)
         self.end = self.get_cell(*end)
+
+    @abc.abstractmethod
+    def solve(self):
+        pass
 
     def get_cell(self, x, y):
         return self.cells[x * self.grid_height + y]
@@ -38,21 +40,12 @@ class GridGraphPathPlanner(object):
             cells.append(self.get_cell(cell.x, cell.y - 1))
         return cells
 
+    @abc.abstractmethod
     def get_path(self):
-        cell = self.end
-        path = [(cell.x, cell.y)]
-        while cell.parent is not self.start:
-            cell = cell.parent
-            path.append((cell.x, cell.y))
-        path.append((self.start.x, self.start.y))
-        path.reverse()
-        return path
+        pass
 
-    def update_cell(self, adj, cell):
-        adj.g = cell.g + 10
-        adj.h = self.get_heuristic(adj)
-        adj.parent = cell
-        adj.f = adj.h + adj.g
-
-    def solve(self):
-        raise NotImplementedError('base path planner is an abstract class')
+    def reset(self):
+        self.opened = []
+        heapq.heapify(self.opened)
+        self.closed = set()
+        self.cells = []

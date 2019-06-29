@@ -1,48 +1,39 @@
-import PIL
+import PIL.Image
 import math
 import numpy as np
 import cv2
 import environments.utils as utils
 import reward.tools.crate_point_list_path as cp
+import utils
+import environments.path_planners as path_planners
+import environments.utils as envutils
 
 class PathPointsController(object):
     def __init__(self,
-                 map='environments/data/map.png',
-                 path_img='environments/data/path.png',
-                 translation=(4, 2),
-                 scale=5,
+                 config,
+                 path_planner,
                  tolerance=1,
-                 testmode=False):
-        img = PIL.Image.open(map)
-        img = np.array(img)
-        self.img = img
-        self.max_y_idx = img.shape[0]- 1
-        self.max_x_idx = img.shape[1]- 1
-        self.scale = scale
-        self.x_trans, self.y_trans = translation
+                 sample_path=False,
+                 **kwargs):
+        self.env_map = env_map = cv2.cvtColor(cv2.imread(config['env_map']), cv2.COLOR_BGR2RGB)
+        self.max_y_idx = config['max_y_idx']
+        self.max_x_idx = config['max_x_idx']
+        self.scale = config['scale']
+        self.x_trans, self.y_trans = config['translation']
         self.tolerance = tolerance
-        self.testmode = testmode
-        self.path = self.get_colour_map(self.img, 0, 255, 0)
-        self.blocks = self.get_colour_map(self.img, 0, 0, 0)
-        img = cv2.imread(path_img)
-        self.path_img = path_img
-        self.list_path = cp.get_path(img, (26, 4))
-
-    @staticmethod
-    def get_colour_map(img, r, g, b):
-        ch_r = img[:, :, 0] == r
-        ch_g = img[:, :, 1] == g
-        ch_b = img[:, :, 2] == b
-        return np.logical_and(ch_r, ch_g, ch_b)
+        path_planner.subscribe(self.update_list_path)
 
     def __call__(self, done, action, state, coordinates):
         pass
 
     def reset(self):
-        self.path = self.get_colour_map(self.img, 0, 255, 0)
-        self.blocks = self.get_colour_map(self.img, 0, 0, 0)
-        img = cv2.imread(self.path_img)
-        self.list_path = cp.get_path(img, (26, 4))
+        pass
+
+    def update_list_path(self, path):
+        self.list_path = path
+        self.path = np.zeros((self.env_map.shape[0], self.env_map.shape[1]), dtype=np.bool)
+        for x, y in self.list_path:
+            self.path[y, x] = True
 
     def _get_actual_coordinates(self, coordinates):
         '''
@@ -57,6 +48,9 @@ class PathPointsController(object):
         x = utils.clip(x, self.max_y_idx)
         y = utils.clip(y, self.max_x_idx)
         return y, x
+
+    def _get_gazeboo_coordinates(self, map_x, map_y):
+        return envutils.get_gazeboo_coordinates(map_x, map_y, self.scale, self.x_trans, self.y_trans, self.max_y_idx)
 
     def _get_closest_path_point(self, x, y, metric='city'):
         if metric == 'city':

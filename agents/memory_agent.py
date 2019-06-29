@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABCMeta
 import torch
 from utils import epsilon
 import utils.replay_memory
@@ -7,6 +8,8 @@ import agents.nets as nets
 import agents.nets.utils
 
 class MemoryAgent(object):
+    __metaclass__ = ABCMeta
+
     def __init__(self,
                  network_architecture,
                  init_state,
@@ -22,7 +25,8 @@ class MemoryAgent(object):
                  device=None,
                  recurrent_state_length=5,
                  logger=None,
-                 replay_memory='replay'):
+                 replay_memory='replay',
+                 *args, **kwargs):
         self.step = 0
         self._set_device(device)
         self.batch_size = batch_size
@@ -51,6 +55,10 @@ class MemoryAgent(object):
         else:
             raise NotImplementedError('memory configuration not implemented')
 
+    @abstractmethod
+    def act(self, state):
+        pass
+
     def sample_memory(self):
         self.epsilon.update()
         if len(self.memory) < self.batch_size:
@@ -77,4 +85,15 @@ class MemoryAgent(object):
             next_state = self.state_collector(next_state, actualize=False)
         if done:
             self.state_collector.reset()
+        # td_error = self.td_error()
         self.memory.push(state, action, next_state, reward)
+
+    def eval(self):
+        self.eval_mode = True
+
+    def train(self):
+        self.eval_mode = False
+
+    # @abstractmethod
+    # def td_error(self):
+    #     pass

@@ -1,6 +1,5 @@
 import argparse
 import json
-import numpy as np
 import cv2
 
 def prepare_argparser():
@@ -15,18 +14,12 @@ def parse_args():
     ret = parser.parse_args()
     return ret
 
-def get_colour_map(img, r, g, b):
-    ch_r = img[:, :, 0] == r
-    ch_g = img[:, :, 1] == g
-    ch_b = img[:, :, 2] == b
-    return np.logical_and(ch_r, ch_g, ch_b)
-
 def get_path(img, start_point):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     contours, _ = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     assert len(contours) == 1
     path = contours[0]
-    path = [(int(el[0][0]), int(el[0][1])) for el in path]
+    path = [(int(el[0][0]), int(el[0][1])) for el in reversed(path)]
     start = path.index(start_point)
     return path[start:] + path[:start]
 
