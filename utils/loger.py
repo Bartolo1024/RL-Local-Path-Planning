@@ -9,7 +9,7 @@ class Logger(object):
 
     def update(self, episode, reward):
         msg = 'episode:{};reward:{}\n'.format(episode, reward)
-        print(msg)
+        # print(msg)
         self.file.write(msg)
         if episode != self.episode:
             self.episode = episode

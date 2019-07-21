@@ -60,13 +60,14 @@ class DQNAgent(memory_agent.MemoryAgent):
 
         loss = functional.l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
         self.logger.log_value('loss', loss.item())
-        print('loss: {}'.format(loss.item()))
+        # print('loss: {}'.format(loss.item()))
         self.optimizer.zero_grad()
         loss.backward()
         for param in self.qnet.parameters():
             if param.requires_grad:
                 param.grad.data.clamp(-1, 1)
         self.optimizer.step()
+        return loss.item()
 
     def future_reward_estimate(self, batch):
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)),

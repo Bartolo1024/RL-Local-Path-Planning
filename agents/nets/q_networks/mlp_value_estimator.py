@@ -20,3 +20,20 @@ class MLPValueEstimator(nn.Module):
         x = self.body(x)
         x = self.head(x.view(x.size(0), -1))
         return x
+
+class CartpoleMLPValueEstimator(nn.Module):
+    def __init__(self,
+                 body_fets=(8, 8, 8),
+                 num_actions=3):
+        super(CartpoleMLPValueEstimator, self).__init__()
+        self.stump = nn.Sequential(nn.Linear(4, body_fets[0]), nn.ReLU())
+        body = [nn.Sequential(nn.Linear(in_fets, out_fets), nn.ReLU())
+                for in_fets, out_fets in zip(body_fets, body_fets[1:])]
+        self.body = nn.Sequential(*body)
+        self.head = nn.Linear(body_fets[-1], num_actions)
+
+    def forward(self, x):
+        x = self.stump(x)
+        x = self.body(x)
+        x = self.head(x)
+        return x

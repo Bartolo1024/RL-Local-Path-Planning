@@ -1,5 +1,17 @@
 import argparse
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def parse_train_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--environment-name', type=str, default='myenv-v0',
@@ -46,8 +58,12 @@ def parse_train_args():
     parser.add_argument('-pg', '--port-gazebo', type=str, default='11345')
     parser.add_argument('-pr', '--port-ros', type=str, default='11311')
     parser.add_argument('--pretrained', default=None)
+    parser.add_argument('--randomized_target', type=str2bool, nargs='?',
+                        const=True, default=False,
+                        help="Randomized path.")
     ret = parser.parse_args()
     return ret
+
 
 def parse_eval_args():
     parser = argparse.ArgumentParser(description='')
@@ -65,6 +81,7 @@ def parse_eval_args():
     ret = parser.parse_args()
     return ret
 
+
 def parse_test_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--rewards', type=str, default='CoinReward')
@@ -74,9 +91,14 @@ def parse_test_args():
     ret = parser.parse_args()
     return ret
 
+
 def prepare_env_kwargs(args):
     if args.environment_name in ('myenv-v0', 'env-maze-v0'):
-        kwargs = {'port': args.port_ros, 'port_gazebo': args.port_gazebo, 'reward_str': args.rewards}
+        kwargs = {
+            'port': args.port_ros,
+            'port_gazebo': args.port_gazebo,
+            'reward_str': args.rewards
+        }
     else:
         kwargs = {}
     return kwargs

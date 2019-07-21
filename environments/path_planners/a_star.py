@@ -35,7 +35,7 @@ class AStar(base_path_planner.GridGraphPathPlanner):
     def get_path(self):
         cell = self.end
         path = [(cell.x, cell.y)]
-        while cell.parent is not self.start:
+        while cell.parent != self.start:
             cell = cell.parent
             path.append((cell.x, cell.y))
         path.append((self.start.x, self.start.y))

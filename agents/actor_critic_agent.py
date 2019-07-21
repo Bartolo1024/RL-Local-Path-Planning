@@ -7,7 +7,7 @@ import agents.memory_agent
 
 class A2CAgent(agents.memory_agent.MemoryAgent):
     '''
-    Implementation of classic advantage actor critic (A2C) agent with replay memory
+    Implementation of advantage actor critic (A2C) agent with replay memory
     '''
     def __init__(self,
                  network_architecture,

@@ -1,7 +1,8 @@
+import torch
 from agents.nets.q_networks.conv1d_value_estimator import Conv1dValueEstimator
 from agents.nets.q_networks.conv2d_value_estimator import Conv2dValueEstimator
 from agents.nets.q_networks.lstm_value_estimator import LSTMValueEstimator
-from agents.nets.q_networks.mlp_value_estimator import MLPValueEstimator
+from agents.nets.q_networks.mlp_value_estimator import MLPValueEstimator, CartpoleMLPValueEstimator
 from agents.nets.q_networks.gru import GRUValueEstimator
 from agents.nets.ac_models.mlp_model import MLPActorCritic
 from agents.nets.ac_models.mlp_cartpole_model import MLPCartpoleActorCritic
@@ -29,6 +30,8 @@ def get_value_estimator(name,
         return MLPValueEstimator(init_state['ranges'].shape, num_actions=num_actions)
     elif name == 'gru':
         return GRUValueEstimator(init_state['ranges'].shape, num_actions=num_actions)
+    elif name == 'cartpole_mlp':
+        return CartpoleMLPValueEstimator(num_actions=num_actions)
     else:
         assert 'BAD VALUE ESTIMATOR NAME'
 
@@ -48,6 +51,9 @@ def get_actor_critic_net(name,
 def get_state_transforms(net_architecture, **kwargs):
     if net_architecture in ('conv1d', 'mlp'):
         return transforms.ToTensor()
+    elif net_architecture in ('cartpole_mlp',):
+        return lambda state, device: (torch.tensor(state, device=device,
+                                      dtype=torch.float32, requires_grad=False),)
     elif net_architecture in get_recurrent_architectures_list():
         return transforms.ToRecurrentStatesTensor()
     return NotImplementedError

@@ -17,10 +17,8 @@ class Plotter(plugin.BasePlugin):
     def update(self, state, reward):
         x_robot_position, y_robot_position = state['robot_position']
         x_target, y_target = state['target_point_map_coordinates']
-        # print(x_target, y_target)
-        # print(x_robot_position, y_robot_position)
         self.tmp[y_robot_position, x_robot_position, :] = (0, 255, 0)
-        self.tmp[y_target, x_target, :] = (0, 0, 50)
+        self.tmp[y_target, x_target, :] = (0, 0, 255)
         self.reward_sum += sum(reward.values())
 
     def reset(self):

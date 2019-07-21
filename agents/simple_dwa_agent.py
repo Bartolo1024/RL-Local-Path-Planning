@@ -6,7 +6,7 @@ import environments.data
 import environments.utils as envutils
 import environments.env_config
 import matplotlib.pyplot as plt
-
+from environments import env_config
 
 class Pose(object):
     def __init__(self, x=0, y=0, z=0):
@@ -42,10 +42,10 @@ class DWAAgent():
                  to_goal_cost_gain=3.4,
                  speed_cost_gain=0.1,
                  robot_radius=0.18,
-                 obstacle_cost_gain=1.,
+                 obstacle_cost_gain=1.9,
                  *args,
                  **kwargs):
-        self.obstacles = self.load_obstacles(env_name, erode_kernel)
+        self.obstacles = self.load_obstacles(env_name)
         self.reverse_transform = envutils.rev_transform(environments.env_config.get_config(env_name))
         self.num_of_actions = num_of_actions
         self.max_speed = max_speed  # [m/s]
@@ -64,11 +64,12 @@ class DWAAgent():
         self.x = np.array([0.0, 0.0, - math.pi / 2.0, 0.0, 0.0])
         self.trajectory = np.array(self.x)
         self.obstacle_cost_gain = obstacle_cost_gain
+        self.prev_time = 0.
 
-    def load_obstacles(self, env_name, erode_kernel):
-        map_path = environments.data.get_map_path(env_name)
-        env_map = cv2.cvtColor(cv2.imread(map_path), cv2.COLOR_BGR2RGB)
-        self.env_map = env_map = cv2.erode(env_map, np.ones(erode_kernel, np.uint8), iterations=1)
+    def load_obstacles(self, env_name):
+        config = env_config.get_config(env_name)
+        env_map = cv2.cvtColor(cv2.imread(config['env_map']), cv2.COLOR_BGR2RGB)
+        self.env_map = env_map = cv2.erode(env_map, np.ones(config['kernel_size'], np.uint8), iterations=1)
         obstacles = utils.get_colour_map(env_map, 0, 0, 0)
         obstacles = [(r, c) for r, c in zip(*np.nonzero(obstacles))]
         config = environments.env_config.get_config(env_name)
@@ -81,18 +82,24 @@ class DWAAgent():
         rot = state['robot_rotation']
         vel = state['robot_velocity']
         omega = state['angular_velocity']
+        time = state['time']
+        if time == 0.:
+            self.prev_time = 0.
+        self.dt = time - self.prev_time
+        print('delta time', self.dt)
+        self.prev_time = time
         self.x = np.array([x_pos, y_pos, rot, vel, omega])
         self.u = self.dwa_control(self.x, goal)
-        img = np.zeros_like(self.env_map, dtype=np.uint8)
-        tx, ty = self.reverse_transform(goal[0], goal[1])
-        rx, ry = self.reverse_transform(x_pos, y_pos)
-        img[ty, tx, 0] = 255
-        img[ry, rx, 1] = 255
-        for ob in self.obstacles:
-            x, y = self.reverse_transform(ob[0], ob[1])
-            img[y, x, 2] = 255
-        plt.imshow(img)
-        plt.show()
+        # img = np.zeros_like(self.env_map, dtype=np.uint8)
+        # tx, ty = self.reverse_transform(goal[0], goal[1])
+        # rx, ry = self.reverse_transform(x_pos, y_pos)
+        # img[ty, tx, 0] = 255
+        # img[ry, rx, 1] = 255
+        # for ob in self.obstacles:
+        #     x, y = self.reverse_transform(ob[0], ob[1])
+        #     img[y, x, 2] = 255
+        # plt.imshow(img)
+        # plt.show()
         return tuple(self.u)
 
     def calc_dynamic_window(self, x):
@@ -149,6 +156,7 @@ class DWAAgent():
         for action in self.get_possible_actions(dw):
             next_x = self.simulate_next_state(x, action)
             x_cost = self.compute_cost(next_x, goal)
+            print('action cost: {}, action {}, next_x: {}'.format(x_cost, action, self.reverse_transform(*next_x[:2])))
             min_cost, min_action = min((x_cost, action), (min_cost, min_action),
                                        key=lambda cost_action: cost_action[0])
         return min_action

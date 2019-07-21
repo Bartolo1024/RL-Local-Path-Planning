@@ -30,6 +30,7 @@ class PathPointsController(object):
         pass
 
     def update_list_path(self, path):
+        # print('update path {}'.format(path))
         self.list_path = path
         self.path = np.zeros((self.env_map.shape[0], self.env_map.shape[1]), dtype=np.bool)
         for x, y in self.list_path:
