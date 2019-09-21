@@ -23,6 +23,18 @@ Project requires python environment with:
 * h5py
 * pyyaml
 
+### Run
+
+training:
+```
+python train.py --env=env-maze-v0 --eps-decay=1000 --net=lstm
+```
+
+evaluatiion:
+```
+python eval.py --agent=dqn --env=myenv-v0 --weights out/2019_05_04_17_17_51/model_1900_total_reward_30.5
+```
+
 ## License
 
 This project is licensed under the MIT License.
