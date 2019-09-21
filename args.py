@@ -1,4 +1,6 @@
 import argparse
+import utils
+import pathlib2
 
 
 def str2bool(v):
@@ -15,10 +17,10 @@ def str2bool(v):
 def parse_train_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--environment-name', type=str, default='myenv-v0',
-                        choices=('myenv-v0', 'CartPole-v0', 'env-maze-v0'),
+                        choices=('myenv-v0', 'CartPole-v0', 'env-maze-v0', '(env-maze-v0,myenv-v0)'),
                         help='It is an environment name registered in gym. '
                              'Cart pole can be used to low computational cost algorithms testing')
-    parser.add_argument('--rewards', type=str, default='PathReward,HitReward')
+    parser.add_argument('--rewards', type=str, default='CoinReward,HitReward')
     parser.add_argument('-a', '--agent', type=str, default='dqn', choices=('dqn', 'a2c'))
     parser.add_argument('-net', '--network-architecture', type=str, default='mlp',
                         help='architecture of network')
@@ -54,13 +56,17 @@ def parse_train_args():
                         help='collected time steps in case of usage recurrent nn architecture')
     parser.add_argument('-mem', '--memory', type=str, default='replay',
                         choices=('replay', 'rollout'))
-    parser.add_argument('-sr', '--sparse-rewards', nargs='+', default=('HitReward',))
+    parser.add_argument('-sr', '--sparse-rewards', nargs='+', default=('HitReward', 'CoinReward'))
     parser.add_argument('-pg', '--port-gazebo', type=str, default='11345')
     parser.add_argument('-pr', '--port-ros', type=str, default='11311')
     parser.add_argument('--pretrained', default=None)
-    parser.add_argument('--randomized_target', type=str2bool, nargs='?',
+    parser.add_argument('--randomized-target', type=str2bool, nargs='?',
                         const=True, default=False,
                         help="Randomized path.")
+    parser.add_argument('--break_if_hit', type=str2bool, nargs='?',
+                        const=True, default=True,
+                        help="start new epoch if robot hit the wall")
+    parser.add_argument('--action-space', type=str, default=None)
     ret = parser.parse_args()
     return ret
 
@@ -71,15 +77,25 @@ def parse_eval_args():
                         choices=('myenv-v0', 'CartPole-v0', 'env-maze-v0'),
                         help='It is an environment name registered in gym. '
                              'Cart pole can be used to low computational cost algorithms testing')
-    parser.add_argument('-a', '--agent', type=str, default='dqn', choices=('dqn', 'a2c', 'dwa', 'simple_dwa'))
+    parser.add_argument('-a', '--agent', type=str, default='dqn',
+                        choices=('dqn', 'a2c', 'dwa', 'simple_dwa'))
     parser.add_argument('--rewards', type=str, default='CoinReward')
     parser.add_argument('--weights', type=str, help='weights path', default=None)
     parser.add_argument('-v', '--value-estimator', type=str, default='mlp',
                         help='architecture of value network')
     parser.add_argument('-pg', '--port-gazebo', type=str, default='11345')
     parser.add_argument('-pr', '--port-ros', type=str, default='11311')
-    ret = parser.parse_args()
-    return ret
+    parser.add_argument('--randomized_target', type=str2bool, nargs='?',
+                        const=False, default=False,
+                        help="Randomized path.")
+    parser.add_argument('--max-steps', type=int, default=400,
+                        help='max steps count')
+    parser.add_argument('--break_if_collision', type=str2bool, nargs='?',
+                        const=False, default=False,
+                        help="start new epoch if robot hit the wall")
+    parser.add_argument('--action-space', type=str, default=None)
+    args = parser.parse_args()
+    return args
 
 
 def parse_test_args():
@@ -92,13 +108,24 @@ def parse_test_args():
     return ret
 
 
-def prepare_env_kwargs(args):
-    if args.environment_name in ('myenv-v0', 'env-maze-v0'):
+def prepare_env_kwargs(args, gazebo_multienv=False):
+    if args.environment_name in ('myenv-v0', 'env-maze-v0') or gazebo_multienv:
+        action_space = utils.generate_action_space(args.action_space)
+        print('action space: ', action_space)
         kwargs = {
-            'port': args.port_ros,
+            'port_ros': args.port_ros,
             'port_gazebo': args.port_gazebo,
-            'reward_str': args.rewards
+            'reward_str': args.rewards,
+            'randomized_target': args.randomized_target,
+            'action_space': action_space
         }
     else:
         kwargs = {}
     return kwargs
+
+
+def restore_train_args(eval_args):
+    # TODO args in yaml
+    with open(str(pathlib2.Path(eval_args.weights).parent / 'args.txt'), 'r') as f:
+        train_args = dict([line.replace('\n', '').split(':') for line in f.readlines()])
+    return train_args

@@ -6,7 +6,7 @@ from environments import utils
 
 
 class PathPlanner(object):
-    def __init__(self, env_config):
+    def __init__(self, env_config, randomized_target):
         self.env_config = env_config
         self.env_map = cv2.cvtColor(cv2.imread(env_config['env_map']), cv2.COLOR_BGR2RGB)
         begin = np.nonzero(utils.get_colour_map(self.env_map, 255, 0, 0))
@@ -29,6 +29,7 @@ class PathPlanner(object):
         self.allowed_cells_list = [(r, c) for r, c in zip(*np.nonzero(self.allowed_cells_map))]
         self.solver = a_star.AStar(env_config['max_y_idx'], env_config['max_x_idx'])
         self.subscribents = []
+        self.randomized_target = randomized_target
 
     def __call__(self, begin=None, sample=True, log=True, random_end=False):
         if not begin:
@@ -39,7 +40,7 @@ class PathPlanner(object):
             # print('path planning task allowed: ', begin in self.allowed_cells_list)
             self.solver = a_star.AStar(self.env_config['max_y_idx'], self.env_config['max_x_idx'])
             self.solver.init_grid(self.obstacles_list)
-            end = random.choice(self.allowed_cells_list) if random_end else self.end
+            end = random.choice(self.allowed_cells_list) if (self.randomized_target or random_end) else self.end
             # print('path planning task end: ', end)
             self.solver.set_task(begin, end)
             try:

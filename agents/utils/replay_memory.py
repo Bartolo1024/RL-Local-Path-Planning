@@ -1,5 +1,5 @@
 import random
-import transitions
+from . import transitions
 
 class ReplayMemory(object):
 

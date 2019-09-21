@@ -1,9 +1,9 @@
-from abc import abstractmethod, ABCMeta
 import torch
-from utils import epsilon
-import utils.replay_memory
-import utils.roll_out_memory
-import utils.transitions
+from abc import abstractmethod, ABCMeta
+from agents.utils import epsilon
+import agents.utils.replay_memory
+import agents.utils.roll_out_memory
+import agents.utils.transitions
 import agents.nets as nets
 import agents.nets.utils
 
@@ -49,9 +49,9 @@ class MemoryAgent(object):
 
     def _set_memory(self, memory, replay_memory_capacity, sparse_rewards=None):
         if memory == 'replay':
-            self.memory = utils.replay_memory.ReplayMemory(replay_memory_capacity)
+            self.memory = agents.utils.replay_memory.ReplayMemory(replay_memory_capacity)
         elif memory == 'rollout' and sparse_rewards is not None:
-            self.memory = utils.roll_out_memory.ReplayMemoryWithRollouts(replay_memory_capacity, sparse_rewards)
+            self.memory = agents.utils.roll_out_memory.ReplayMemoryWithRollouts(replay_memory_capacity, sparse_rewards)
         else:
             raise NotImplementedError('memory configuration not implemented')
 
@@ -64,7 +64,7 @@ class MemoryAgent(object):
         if len(self.memory) < self.batch_size:
             return
         batch = self.memory.sample(self.batch_size)
-        batch = utils.transitions.Transition(*zip(*batch))
+        batch = agents.utils.transitions.Transition(*zip(*batch))
 
         state_batch = self.state_transform(batch.state, self.device)
         action_batch = torch.stack(tuple([torch.tensor(action,

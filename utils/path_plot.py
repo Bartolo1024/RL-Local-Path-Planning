@@ -1,5 +1,6 @@
 import cv2
 import matplotlib.pyplot as plt
+import ignite.engine
 import environments.env_config as config
 from utils import plugin
 
@@ -21,10 +22,17 @@ class Plotter(plugin.BasePlugin):
         self.tmp[y_target, x_target, :] = (0, 0, 255)
         self.reward_sum += sum(reward.values())
 
-    def reset(self):
-        if self.reward_sum > self.max_reward:
+    def reset(self, *_):
+        if self.reward_sum > self.max_reward or self.reward_sum > 0:
             out_path = self.out_path / 'best_path_{}.png'.format(self.reward_sum)
             plt.imsave(str(out_path), self.tmp)
             self.max_reward = self.reward_sum
         self.reward_sum = 0
         self.tmp = self.env_map.copy()
+
+    def _update_from_engine(self, engine):
+        self.update(engine.state.state, engine.state.reward)
+
+    def attach(self, engine):
+        engine.add_event_handler(ignite.engine.Events.ITERATION_COMPLETED, self._update_from_engine)
+        engine.add_event_handler(ignite.engine.Events.EPOCH_COMPLETED, self.reset)

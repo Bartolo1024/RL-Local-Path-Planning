@@ -8,7 +8,7 @@ from agents.nets.ac_models.mlp_model import MLPActorCritic
 from agents.nets.ac_models.mlp_cartpole_model import MLPCartpoleActorCritic
 
 from .utils import SequenceCollector
-import transforms
+from . import transforms
 
 def get_value_estimator(name,
                         init_state,
@@ -43,7 +43,7 @@ def get_actor_critic_net(name,
         return MLPActorCritic(ranges_shape=init_state['ranges'].shape,
                               target_points_shape=init_state['target_point'].shape,
                               num_actions=num_actions)
-    elif name == 'cartpole_mlp':
+    elif name == 'cartpole_mlp' or (env == 'cartpole' and name == 'mlp'):
         return MLPCartpoleActorCritic(state_shape=init_state.shape,
                                       num_actions=num_actions)
     raise NotImplementedError('BAD VALUE ESTIMATOR NAME')
@@ -52,11 +52,14 @@ def get_state_transforms(net_architecture, **kwargs):
     if net_architecture in ('conv1d', 'mlp'):
         return transforms.ToTensor()
     elif net_architecture in ('cartpole_mlp',):
-        return lambda state, device: (torch.tensor(state, device=device,
-                                      dtype=torch.float32, requires_grad=False),)
+        return to_tensor
     elif net_architecture in get_recurrent_architectures_list():
         return transforms.ToRecurrentStatesTensor()
     return NotImplementedError
+
+def to_tensor(state, device):
+    state = list(state)
+    return (torch.tensor(state, device=device, dtype=torch.float32, requires_grad=False),)
 
 def get_recurrent_architectures_list():
     return ['lstm', 'rnn', 'gru', 'transformer']

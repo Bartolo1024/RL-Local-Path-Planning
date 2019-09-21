@@ -1,6 +1,6 @@
 import random
-import transitions
-import replay_memory
+from . import transitions
+from . import replay_memory
 
 
 class Reward(object):

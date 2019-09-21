@@ -2,6 +2,7 @@ import reward
 import environments.utils as utils
 import environments.path_points_controller as pc
 
+
 class CoinReward(reward.Reward, pc.PathPointsController):
     def __init__(self,
                  config,
@@ -21,9 +22,11 @@ class CoinReward(reward.Reward, pc.PathPointsController):
         end_x = utils.clip(x + self.tolerance, self.max_x_idx)
         rew = self.path[beg_y: end_y + 1, beg_x: end_x + 1].any()
         self.path[beg_y: end_y + 1, beg_x: end_x + 1] = False
+        # print('points ', sum(sum(self.path)))
         if not self.path.any():
-            print('new round')
+            print('new round high reward')
             self.reset()
+            return 5.
         return self.point_reward if rew else self.default_reward
 
     def reset(self):

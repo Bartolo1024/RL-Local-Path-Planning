@@ -65,6 +65,7 @@ class DWAAgent():
         self.trajectory = np.array(self.x)
         self.obstacle_cost_gain = obstacle_cost_gain
         self.prev_time = 0.
+        self.action_space = ((.3, .0), (.05, .3), (.05, -.3))
 
     def load_obstacles(self, env_name):
         config = env_config.get_config(env_name)
@@ -132,9 +133,12 @@ class DWAAgent():
         next_x[4] = u[1]
         return next_x
 
+    def set_action_space(self, action_space):
+        self.action_space = action_space
+
     def get_possible_actions(self, dynamic_window):
         # TODO implement dw grid
-        return ((.3, .0), (.05, .3), (.05, -.3))
+        return self.action_space
 
     def simulate_next_state(self, state, action):
         return self.motion(state, action, self.dt)
@@ -156,7 +160,7 @@ class DWAAgent():
         for action in self.get_possible_actions(dw):
             next_x = self.simulate_next_state(x, action)
             x_cost = self.compute_cost(next_x, goal)
-            print('action cost: {}, action {}, next_x: {}'.format(x_cost, action, self.reverse_transform(*next_x[:2])))
+            # print('action cost: {}, action {}, next_x: {}'.format(x_cost, action, self.reverse_transform(*next_x[:2])))
             min_cost, min_action = min((x_cost, action), (min_cost, min_action),
                                        key=lambda cost_action: cost_action[0])
         return min_action

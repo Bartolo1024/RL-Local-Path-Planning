@@ -20,35 +20,36 @@ import path_planners
 
 
 class GazeboMazeTurtlebotLidarEnvBase(gazebo_env.GazeboEnv):
-
     def __init__(self,
                  launch_file,
                  config,
-                 port='11311',
+                 port_ros='11311',
                  port_gazebo='11345',
                  reward_str='HitReward,CoinReward',
                  logger=None,
-                 random_path=True,
-                 num_actions=3):
+                 randomized_target=True,
+                 action_space=((.3, .0), (.05, .3), (.05, -.3))):
+        print('port gazeebo: {}, port ros: {}'.format(port_gazebo, port_ros))
         gazebo_env.GazeboEnv.__init__(self,
                                       launch_file,
-                                      port=port,
+                                      port=port_ros,
                                       port_gazebo=port_gazebo)
+        print('ACTION SPACE', action_space)
         self.vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=5)
         self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         self.pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
         self.reset_proxy = rospy.ServiceProxy('/gazebo/reset_simulation', Empty)
-        self.action_space = spaces.Discrete(3) #F,L,R
+        self.action_space = spaces.Discrete(len(action_space))
+        self.action_tuple = action_space
         self.reward_range = (-np.inf, np.inf)
         self.model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
         self.model = GetModelStateRequest()
         self.model.model_name = 'mobile_base'
-        self.path_planner = path_planners.PathPlanner(config)
+        self.path_planner = path_planners.PathPlanner(config, randomized_target)
         self.rewards = get_reward(reward_str, config, path_planner=self.path_planner)
         self.min_range = 0.2
         self.transform_observation = state_transforms.ObservationTransform(config, self.path_planner)
         self.logger = logger
-        self.random_path = random_path
         self._seed()
 
     def _seed(self, seed=None):
@@ -59,15 +60,10 @@ class GazeboMazeTurtlebotLidarEnvBase(gazebo_env.GazeboEnv):
         con_ut.wait_for_service('/gazebo/unpause_physics', self.unpause)
         if isinstance(action, tuple) and len(action) == 2:
             self.publish_velocity(*action)
-        elif action == 0: #FORWARD
-            self.publish_velocity(0.3, .0)
-        elif action == 1: #LEFT
-            self.publish_velocity(0.05, 0.3)
-        elif action == 2: #RIGHT
-            self.publish_velocity(0.05, -0.3)
+        elif isinstance(action, int):
+            self.publish_velocity(*self.action_tuple[action])
         else:
-            raise NotImplementedError('action not implemented')
-
+            raise NotImplementedError
         data = con_ut.wait_for_data('/scan', LaserScan, 5)
         # cam = con_ut.wait_for_data('/camera/rgb/image_raw', Image, time_out=5)
         # print(np.array(cam).shape)

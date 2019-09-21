@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch import optim
 from torch.nn import functional
-import memory_agent
+from . import memory_agent
 import agents.nets as nets
 
 
@@ -48,7 +48,7 @@ class DQNAgent(memory_agent.MemoryAgent):
         tmp = self.sample_memory()
         if tmp is None:
             print('not update')
-            return
+            return 0.
         state_batch, action_batch, reward_batch, batch = tmp
         self.qnet.train()
         q = self.qnet(*state_batch)
@@ -72,7 +72,7 @@ class DQNAgent(memory_agent.MemoryAgent):
     def future_reward_estimate(self, batch):
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)),
                                       device=self.device,
-                                      dtype=torch.uint8)
+                                      dtype=torch.bool)
         non_final_next_states = filter(lambda el: el is not None, batch.next_state)
         non_final_next_states = self.state_transform(non_final_next_states, self.device)
         next_state_values = torch.zeros(self.batch_size, device=self.device, requires_grad=False)

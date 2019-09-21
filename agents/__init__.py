@@ -1,7 +1,7 @@
-import actor_critic_agent
-import dqn_agent
-import dwa_agent
-import simple_dwa_agent
+from . import actor_critic_agent
+from . import dqn_agent
+from . import dwa_agent
+from . import simple_dwa_agent
 
 def get_agent(name, *args, **kwargs):
     if name == 'dqn':

@@ -99,7 +99,7 @@ def get_gazeboo_coordinates(map_x, map_y,
                             x_trans, y_trans,
                             max_y_idx):
     x, y = map_y, map_x
-    x = (float(x) - x_trans)  / scale
+    x = (float(x) - x_trans) / scale
     y = (float(y) + y_trans - max_y_idx) / scale
     return x, y
 

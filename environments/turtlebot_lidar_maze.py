@@ -3,15 +3,19 @@ import env_config
 
 class GazeboMazeTurtlebotLidarEnv(GazeboMazeTurtlebotLidarEnvBase):
     def __init__(self,
-                 port='11311',
+                 port_ros='11311',
                  port_gazebo='11345',
                  reward_str='HitReward,CoinReward',
-                 logger=None):
+                 logger=None,
+                 randomized_target=False,
+                 action_space=((.3, .0), (.05, 0.3), (.05, -0.3))):
         config = env_config.get_config('env-maze-v0')
         GazeboMazeTurtlebotLidarEnvBase.__init__(self,
                                                  launch_file='GazeboMazeTurtlebotLidar_v0.launch',
                                                  config=config,
-                                                 port=port,
+                                                 port_ros=port_ros,
                                                  port_gazebo=port_gazebo,
                                                  reward_str=reward_str,
-                                                 logger=logger)
+                                                 logger=logger,
+                                                 randomized_target=randomized_target,
+                                                 action_space=action_space)

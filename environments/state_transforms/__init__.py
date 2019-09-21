@@ -34,7 +34,8 @@ class ObservationTransform(object):
                         'target_point_coordinates': (0., 0.),
                         'target_point_map_coordinates': (0, 0),
                         'robot_position': (0, 0),
-                        'time': 0.})
+                        'time': 0.,
+                        'tp_activation_map': np.zeros((20,))})
         return ret, done
 
     def get_robot_kinematic_state(self, coordinates=None):

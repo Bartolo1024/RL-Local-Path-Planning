@@ -1,3 +1,4 @@
+import re
 import gym
 import sys
 import args as argparse
@@ -7,7 +8,7 @@ from utils import get_new_session_id
 from utils import NetSaver
 from utils import Logger
 from ignite.contrib.handlers import ProgressBar
-from utils.step_generator import StepGenerator
+from utils.step_generator import MultienvStepGenerator
 from environments import GazeboCircuitTurtlebotLidarEnv
 
 
@@ -29,7 +30,7 @@ def prepare_agent_kwargs(args, state, logger, num_of_actions):
     return agent_kwargs
 
 
-def create_reinforce_engine(agent, environment, args):
+def create_reinforce_engine(agent, environments, args):
     def _run_single_simulation(engine, timestep=None):
         transition = engine.state.batch
         engine.state.agent.push_transition(*transition)
@@ -39,7 +40,7 @@ def create_reinforce_engine(agent, environment, args):
     @engine.on(ignite_engine.Events.STARTED)
     def initialize(engine):
         engine.state.agent = agent
-        engine.state.environment = environment
+        engine.state.environment = environments
         engine.state.max_reward = -sys.maxint
 
     @engine.on(ignite_engine.Events.EPOCH_STARTED)
@@ -68,7 +69,7 @@ def create_reinforce_engine(agent, environment, args):
 
     @engine.on(ignite_engine.Events.COMPLETED)
     def close(engine):
-        environment.close()
+        [env.close() for env in environments]
 
     def _attach(plugin):
         plugin.attach(engine)
@@ -82,22 +83,28 @@ def main(args):
     session_id = get_new_session_id()
     logger = Logger(session_id)
 
-    env = gym.make(args.environment_name, **argparse.prepare_env_kwargs(args))
-    state = env.reset()
-    agent = agents.get_agent(args.agent, **prepare_agent_kwargs(args, state, logger, env.action_space.n))
+    env_names = re.findall(r'[\(|,]([^\(|,|\)]+)', args.environment_name)
+    envs = []
+    for env_name in env_names:
+        env = gym.make(env_name, **argparse.prepare_env_kwargs(args, gazebo_multienv=True))
+        args.port_gazebo = str(int(args.port_gazebo) + 1)
+        args.port_ros = str(int(args.port_ros) + 1)
+        envs.append(env)
+    state = [env.reset() for env in envs][0]
+    agent = agents.get_agent(args.agent, **prepare_agent_kwargs(args, state, logger, envs[0].action_space.n))
     if args.pretrained:
         print('load pretrained weights: ', args.pretrained)
         agent.load_weights(args.pretrained)
     agent.train()
     saver = NetSaver(args, session_id)
 
-    trainer = create_reinforce_engine(agent, env, args)
+    trainer = create_reinforce_engine(agent, envs, args)
 
     # trainer.attach(ProgressBar(persist=False)) # Key error 'percentage' after a few k of epochs !?
     trainer.attach(saver)
     trainer.attach(logger)
 
-    engine_state = trainer.run(data=StepGenerator(env, agent, max_steps=args.max_steps),
+    engine_state = trainer.run(data=MultienvStepGenerator(envs, agent, max_steps=args.max_steps),
                                max_epochs=args.epochs_count)
 
 
