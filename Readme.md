@@ -13,7 +13,7 @@ You can train agnets on the Turtlebot-Lidar enviroments. Project also contains C
 
 ### Prerequisites
 
-Before running you have to setup ros catkin workspace with [Gazebo-gym](https://github.com/erlerobot/gym-gazebo) and activate it.
+Before running you have to setup ros catkin workspace with Gazebo-gym (https://github.com/erlerobot/gym-gazebo) and activate it.
 
 Project requires python environment with:
 
