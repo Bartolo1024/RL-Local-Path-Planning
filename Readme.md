@@ -1,4 +1,4 @@
-# RL Mobile Robot Local Path Planning
+# Reinforcement Learning for Mobile Robot Local Path Planning
 
 The aim of this project is to train reinforcement learning agent for mobile robot control task. Project is based on ROS and Gazebo-gym environment for Turtlebot.
 Agents use turtlebot lidar sensors and information from A* global path planner as input.
@@ -13,7 +13,7 @@ You can train agnets on the Turtlebot-Lidar enviroments. Project also contains C
 
 ### Prerequisites
 
-Before running you have to setup ros catkin workspace with Gazebo-gym and activate it.
+Before running you have to setup ros catkin workspace with [Gazebo-gym](https://github.com/erlerobot/gym-gazebo) and activate it.
 
 Project requires python environment with:
 
