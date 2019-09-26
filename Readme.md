@@ -6,8 +6,8 @@ Agents use turtlebot lidar sensors and information from A* global path planner a
 ## Implemented agents
 
 * [DQN](https://arxiv.org/abs/1312.5602) - RL algorithm (done)
-* [Dynamic Window Approach](researchgate.net/publication/3344494_The_Dynamic_Window_Approach_to_Collision_Avoidance) - classic algorithm (done)
-* [Advantage Actor Critic](papers.nips.cc/paper/1786-actor-critic-algorithms.pdf) - RL algorithm (in progress)
+* [Dynamic Window Approach](https://researchgate.net/publication/3344494_The_Dynamic_Window_Approach_to_Collision_Avoidance) - classic algorithm (done)
+* [Advantage Actor Critic](https://papers.nips.cc/paper/1786-actor-critic-algorithms.pdf) - RL algorithm (in progress)
 
 You can train agnets on the Turtlebot-Lidar enviroments. Project also contains Cartpole-Environment for debugging.
 
